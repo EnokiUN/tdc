@@ -22,13 +22,17 @@ async def on_ready():
 @client.event
 async def on_message(message: discord.Message):
     if client.channel.id is None: return
-    if message.channel.id == client.channel.id:
+    if message.channel.id == client.channel.id or client.user in message.mentions:
+        if message.channel.id != client.channel.id:
+            print(f"----- New Mention from #{message.channel} - {message.guild}")
         if message.reference:
-            refmsg = await client.channel.fetch_message(message.reference.message_id)
+            refmsg = await message.channel.fetch_message(message.reference.message_id)
             if refmsg is None:
                 return print("╭───> [Unable to Load Message]")
             print(f"╭───> [{refmsg.author}]: {refmsg.clean_content}")
         print(f"[{message.author}]: {message.clean_content}")
+        if message.channel.id != client.channel.id:
+            print("----------")
 
 if not os.path.exists(HOME):
     print("No .tdc configuratuon exists")
