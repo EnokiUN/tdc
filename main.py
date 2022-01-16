@@ -9,6 +9,7 @@ HOME = "/data/data/com.termux/files/home/.tdc" # Had to manually add the .termin
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
+client.seen_messages = []
 client.channel = None
 
 @client.event
@@ -17,10 +18,16 @@ async def on_ready():
     print("Discord started.")
     guild = await select_guild(client)
     await select_channel(client, guild)
-    await process_messages(client)
+    while True:
+        try:
+            await process_messages(client)
+        except Exception as e:
+            print("Fatal Error:")
+            print(e)
 
 @client.event
 async def on_message(message: discord.Message):
+    client.seen_messages.append(message)
     if client.channel.id is None: return
     if message.channel.id == client.channel.id or client.user in message.mentions:
         if message.channel.id != client.channel.id:

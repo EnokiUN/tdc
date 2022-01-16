@@ -41,6 +41,20 @@ async def emoji_command(client, name, *args, **kwargs):
     animated = "a" if emoji.animated else ""
     await client.channel.send(f"<{animated}:{emoji.name}:{emoji.id}>")
 
+@command(["reply", "r"])
+async def reply(client, arg, *args, **kwargs):
+    message, content = arg.split(" ", 1)
+    message = int(message) - 1
+    if message + 1 > len(client.seen_messages):
+        return print("Unknown message")
+    emotes = re.findall(":([a-zA-Z0-9_-]{2,32}):", content)
+    for i in emotes:
+        emote = discord.utils.get(client.emojis, name=i)
+        if i is not None:
+            animated = "a" if emote.animated else ""
+            content = content.replace(f":{i}:", f"<{animated}:{emote.name}:{emote.id}>")
+    await client.seen_messages[message].reply(content)
+
 async def process_messages(client):
     while True:
         msg = await ainput()
