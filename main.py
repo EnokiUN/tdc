@@ -4,7 +4,7 @@ import os
 import sys
 from utils import *
 
-HOME = "/data/data/com.termux/files/home/.tdc" # Had to manually add the .terminalcord path for termux reasons.
+HOME = os.path.expanduser("~/.tdc")
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)

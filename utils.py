@@ -30,7 +30,7 @@ async def send(client, content, *args, **kwargs):
     emotes = re.findall(":([a-zA-Z0-9_-]{2,32}):", content)
     for i in emotes:
         emote = discord.utils.get(client.emojis, name=i)
-        if i is not None:
+        if emote is not None:
             animated = "a" if emote.animated else ""
             content = content.replace(f":{i}:", f"<{animated}:{emote.name}:{emote.id}>")
     await client.channel.send(content)
