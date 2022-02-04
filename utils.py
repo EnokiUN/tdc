@@ -1,4 +1,5 @@
 import asyncio
+import curses
 import sys
 import re
 import discord
@@ -76,42 +77,57 @@ async def process_messages(client):
                 msg = msg[1:]
             await send(client, msg)
 
-async def select_guild(client):
-    print("Which server do you want to access")
+async def handle_selection(stdscr, text):
+    height, width = stdscr.getmaxyx()
+    stdscr.clear()
+    selection_pad = curses.newpad(1024, 1024)
+    lines = text.splitlines()
+    line = 1
+    offset = 0
+    stdscr.getch()
+    selection_pad.clear()
+    selection_pad.addstr(0, 0, text)
+    selection_pad.addstr(line, 0, ">")
+    selection_pad.refresh(offset, 0, 0, 0, height-1, width-1)
     while True:
-        print("\n".join([f"[{x+1}] {i}" for x, i in enumerate(client.guilds)]))
-        choice = input()
-        try:
-            choice = int(choice)
-            assert choice > 0, "Out of range"
-            guild = client.guilds[choice-1]
-        except Exception as e:
-            print("Incorrect choice")
-            print(e)
+        key = stdscr.getch()
+        if key == -1:
             continue
-        else:
+        elif key == 113:
+            exit()
+        elif key == 10:
             break
-    return guild
+        elif key == 65:
+            line = max(1, line-1)
+        elif key == 66:
+            line = min(line+1, len(lines)-1)
+        else:
+            continue
+        if line < height//2:
+            offset = 0
+        elif line > len(lines)-height//2:
+            offset = len(lines)-height
+        else:
+            offset = line-height//2
+        selection_pad.clear()
+        selection_pad.addstr(0, 0, text)
+        selection_pad.addstr(line, 0, ">")
+        selection_pad.refresh(offset, 0, 0, 0, height-1, width-1)
+    return line
+
+async def select_guild(stdscr, client):
+    text = "Choose a guild:"
+    for i in client.guilds:
+        text += f"\n  {i.name}"
+    line = await handle_selection(stdscr, text)
+    return client.guilds[line-1]
  
-async def select_channel(client, guild):
+async def select_channel(stdscr, client, guild):
     client.channel = None
-    print(f"Now select a channel from {guild}")
-    while True:
-        print("\n".join([f"[{x+1}] {i}" for x, i in enumerate(guild.text_channels)]))
-        choice = input()
-        try:
-            choice = int(choice)
-            assert choice > 0, "Out of range"
-            client.channel = guild.text_channels[choice-1]
-        except Exception as e:
-            print("Incorrect choice")
-            continue
-        else:
-            break
-    print(f"---------- #{client.channel} - {guild} ----------")
+    text = f"Now choose a channel from {guild.name}"
+    for i in guild.text_channels:
+        text += f"\n  {i.name}"
+    line = await handle_selection(stdscr, text)
+    client.channel = guild.text_channels[line-1]
     return client.channel
 
-async def ainput(string: str="") -> str:
-    if string:
-        await asyncio.get_event_loop().run_in_executor(None, lambda s=string: sys.stdout.write(s+' '))
-    return await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
